@@ -15,7 +15,7 @@ let Todos = [];
 
 const displayAllTodos = () => {
 	todoList.innerHTML = ""
-	axios.get("http://localhost:3000/posts").then(res => {	
+	axios.get("http://localhost:8000/posts").then(res => {
 		Todos = [...res.data]
 		if (Todos.length == 0) {
 
@@ -27,8 +27,8 @@ const displayAllTodos = () => {
 			<br>
 			</div>
 			`;
-		} else {		
-			for(let key in Todos){
+		} else {
+			for (let key in Todos) {
 				let todo = Todos[key];
 				todoList.innerHTML += `
 				<div data-id="${todo.id}" class="todo-content-item">
@@ -70,9 +70,9 @@ const addTodo = () => {
 	const body = bodyField.value;
 	const status = "Not complete";
 	axios
-    .post('http://localhost:3000/posts', {id,timestamp, body, status})
-    .then(res => console.log(res.data))
-    .catch(err => console.error(err));
+		.post('http://localhost:8000/posts', { id, timestamp, body, status })
+		.then(res => console.log(res.data))
+		.catch(err => console.error(err));
 	idField.value = "";
 	timeField.value = "";
 	bodyField.value = "";
@@ -82,11 +82,13 @@ const addTodo = () => {
 const editTodo = (itemId) => {
 	createTodoButton.style.display = "none"
 	updateTodoButton.style.display = "block"
-	const {id, timestamp, status, body} = Todos.filter(todo => todo.id == itemId)[0];
+	const { id, timestamp, status, body } = Todos.filter(todo => todo.id == itemId)[0];
 
 	idField.value = id;
 	timeField.value = getTimeStamp();
 	bodyField.value = body;
+
+
 }
 
 const generateID = () => {
@@ -107,17 +109,28 @@ const addNewTodo = () => {
 
 const deleteTodo = (itemId) => {
 	Todos = Todos.filter(todo => todo.id != itemId);
-	displayAllTodos();
+	axios
+	.delete(`http://localhost:8000/posts/${itemId}`)
+	.then(displayAllTodos())
+	
 }
 
 const updateTodo = () => {
-	const todos = Todos.map(todo=>{
-		if(todo.id === idField.value){
+	/*const todos = Todos.map(todo => {
+		if (todo.id === idField.value) {
 			todo.status = "Not complete";
 			todo.body = bodyField.value;
 			todo.timestamp = timeField.value;
+
+			axios
+			.patch(`http/localhost:8000/posts/${todo.id}`, { 
+				id: todo.id,
+				timestamp: getTimeStamp(),
+				body: bodyField.value
+			 })
+			 .then(displayAllTodos())
 			return todo;
-		}else{
+		} else {
 			return todo;
 		}
 	})
@@ -125,41 +138,65 @@ const updateTodo = () => {
 	idField.value = "";
 	timeField.value = "";
 	bodyField.value = "";
-	displayAllTodos();
+	updateTodoButton.style.display = "none"
+	createTodoButton.style.display = "block"*/
+	let itemId = idField.value
+	let newbody = bodyField.value
+	Todos = Todos.filter(todo => todo.id != itemId);
+	axios
+	.patch(`http://localhost:8000/posts/${itemId}`,{
+		body:newbody,
+		status: "Not complete"
+	})
+	.then(displayAllTodos())
+
+	idField.value = "";
+	timeField.value = "";
+	bodyField.value = "";
 	updateTodoButton.style.display = "none"
 	createTodoButton.style.display = "block"
 }
 
 const markTodoAsComplete = (itemId) => {
-	const todos = Todos.map(todo=>{
-		if(todo.id === itemId){
-			todo.status = "Complete";
-			return todo;
-		}else{
-			return todo;
-		}
+	Todos = Todos.filter(todo => todo.id != itemId);
+	axios
+	.patch(`http://localhost:8000/posts/${itemId}`,{
+		status:"Complete"
 	})
-	Todos = todos;
-	displayAllTodos();
+	.then(displayAllTodos())
 }
 
-todoList.addEventListener('click', (e)=>{
+todoList.addEventListener('click', (e) => {
 
 	const id = e.target.parentElement.parentElement.dataset.id;
 
-	if(e.target.classList.contains('fa-edit')){
-	  editTodo(id);
+	if (e.target.classList.contains('fa-edit')) {
+		editTodo(id);
 	}
-	
-	if(e.target.classList.contains('fa-trash-alt')) {
-	  deleteTodo(id);
- 	}
 
-	if(e.target.classList.contains('fa-check')){
-	  markTodoAsComplete(id);
+	if (e.target.classList.contains('fa-trash-alt')) {
+		deleteTodo(id);
+	}
+
+	if (e.target.classList.contains('fa-check')) {
+		markTodoAsComplete(id);
 	}
 })
 
 addNewTodoButton.addEventListener('click', addNewTodo);
 createTodoButton.addEventListener('click', addTodo);
 updateTodoButton.addEventListener('click', updateTodo);
+
+/***
+ * 
+ * 	axios
+		.patch(`http://localhost:8000/posts?q=${idField}`, {
+			//update the current body with the value in the body field
+			body: bodyField.value,
+		})
+		.then(res => console.log(res.data));
+		idField.value = "";
+		timeField.value = "";
+		bodyField.value = "";
+		displayAllTodos();
+ */
